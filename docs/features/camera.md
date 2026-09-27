@@ -674,19 +674,6 @@ For example: `http://192.168.1.100:8000/overlay/1`
     URL (see below). This is unrelated to how you reach the server — a reverse proxy,
     Cloudflare Tunnel, or remote domain does not change it; a token is what OBS needs.
 
-### Show the printer model
-
-In **Settings → API Keys → Streaming Overlay**, select your printer and enable
-**Printer model** under **Fields to show**. The option is off by default.
-With **Printer name** also selected, the overlay shows an identity such as
-`Big Mumma · H2D`. Clear **Printer name** to show just the model.
-
-The model comes from the selected printer's record and is omitted if it is
-unknown. It also works with a **Streaming Overlay** token in OBS. Use **Show
-preview** to check the result, then copy the updated URL into your OBS browser
-source. These selections are stored in the URL, so an existing OBS source keeps
-its current appearance until you replace its URL.
-
 ### Streaming Overlay token (login-enabled deployments)
 
 1. Go to **Settings → API Keys** (Camera API Tokens).
@@ -718,7 +705,7 @@ The overlay displays:
 |---------|-------------|
 | **Camera Feed** | Full-screen live camera view |
 | **Bambuddy Logo** | Branding in top-right corner (links to GitHub) |
-| **Printer Model** | Selected printer model (off by default) |
+| **Printer Name / Model** | Printer name and/or model, e.g. `Big Mumma · H2D` (both off by default — see Show/Hide Elements) |
 | **Filename** | Current print file name |
 | **Status** | Printing, Paused, Idle, etc. |
 | **Progress Bar** | Visual progress with percentage |
@@ -822,6 +809,8 @@ Available elements:
 | `nozzle` | Nozzle temperature (both nozzles on a dual-nozzle printer) |
 | `bed` | Bed temperature |
 | `chamber` | Chamber temperature |
+
+`printer` and `model` are independent and share one line: with both, the overlay shows `Big Mumma · H2D`; with only `model`, just `H2D`. The model comes from the printer's settings in Bambuddy and is left out, separator included, when none is stored. A long name and model is cut off with an ellipsis rather than running past the edge of a narrow OBS source. In the builder, tick **Printer model** under **Fields to show**. It is off by default, so an overlay URL already in OBS looks the same until you replace it with one that includes `model`.
 
 Temperatures are shown whether or not a print is running — a preheating printer is exactly when they are worth watching. Each reading appears only when the printer reports it, so `chamber` produces nothing on a P1 or A1: those models publish a chamber value with no real sensor behind it, and Bambuddy leaves it out rather than putting a number on screen that means nothing.
 
