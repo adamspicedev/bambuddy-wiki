@@ -771,6 +771,33 @@ If another viewer already has the printer's camera open, the overlay joins that
 viewer's stream and runs at its frame rate - see
 [Shared Streams and FPS](#shared-streams-and-fps).
 
+#### Updated artwork for portrait and landscape
+
+In **Settings → API Keys → Streaming Overlay**, enable **Updated artwork**, select the fields to show, and copy the generated URL into your OBS browser source. The checkbox is off by default. Existing URLs keep the original layout unless you add `artwork=updated`.
+
+```
+/overlay/1?artwork=updated&show=printer,model,filename,status,progress,layers,eta,nozzle,bed,chamber
+```
+
+Set the browser source dimensions in OBS to the composition you want:
+
+- **Portrait, 1080 × 1920:** printer identity and Bambuddy logo above a cropped camera view, with print information below.
+- **Landscape, 1920 × 1080:** a full-screen camera behind printer identity and a translucent information panel along the bottom.
+
+Screenshots below show the implemented layouts with simulated print data and a camera test pattern, not a live printer feed.
+
+![Updated landscape overlay](../images/stream-overlay/updated-landscape.png)
+
+![Updated portrait overlay](../images/stream-overlay/updated-portrait.png){ width="360" }
+
+The layout follows the browser source viewport, including the builder preview. OBS scaling an existing landscape source into a portrait scene does not change its viewport; change the source's width and height instead.
+
+The camera keeps its aspect ratio and fills the available area by cropping. Portrait cropping can hide the sides of the build plate. Camera rotation and the frame-rate setting still apply.
+
+All field toggles remain independent. Hidden or unavailable readings leave no empty boxes. Printer name and model appear in the header. The **Text size** setting adjusts the new layout too. `camera=false` hides the camera without starting a stream. A disconnected printer shows **Printer offline** when Status is enabled and hides stale progress and temperature readings. Finished and failed jobs show their status without an idle message.
+
+When login is enabled, use the same **Streaming Overlay** token as the original overlay. The updated artwork does not grant additional access.
+
 #### Status-Only Mode (No Camera)
 
 Hide the camera feed and show only the status overlay on a black background:
