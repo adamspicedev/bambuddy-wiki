@@ -773,10 +773,10 @@ viewer's stream and runs at its frame rate - see
 
 #### Updated artwork for portrait and landscape
 
-In **Settings → API Keys → Streaming Overlay**, enable **Updated artwork**, select the fields to show, and copy the generated URL into your OBS browser source. The checkbox is off by default. Existing URLs keep the original layout unless you add `artwork=updated`.
+In **Settings → API Keys → Streaming Overlay**, enable **Updated artwork**, select the fields to show, and copy the generated URL into your OBS browser source. The checkbox is off by default. Existing URLs keep the original layout unless you add `artwork=2`.
 
 ```
-/overlay/1?artwork=updated&show=printer,model,filename,status,progress,layers,eta,nozzle,bed,chamber
+/overlay/1?artwork=2&show=printer,model,filename,status,progress,layers,eta,nozzle,bed,chamber
 ```
 
 Set the browser source dimensions in OBS to the composition you want:
