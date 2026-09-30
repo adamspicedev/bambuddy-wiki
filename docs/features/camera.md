@@ -729,8 +729,8 @@ The overlay displays:
 
 !!! tip "Build the URL in the UI"
     **Settings → API Keys → Streaming Overlay** has a builder: pick the printer,
-    tick the fields you want, set size and frame rate, paste in a token if you
-    need one, and copy the finished URL. It also has a preview so you can see
+    tick the fields you want, set size, artwork and frame rate, paste in a token
+    if you need one, and copy the finished URL. It also has a preview so you can see
     the result before pasting it into OBS. The parameters below are what it
     produces, documented for anyone assembling a URL by hand or scripting one.
 
@@ -771,9 +771,9 @@ If another viewer already has the printer's camera open, the overlay joins that
 viewer's stream and runs at its frame rate - see
 [Shared Streams and FPS](#shared-streams-and-fps).
 
-#### Updated artwork for portrait and landscape
+#### Version 2 artwork (portrait and landscape)
 
-In **Settings → API Keys → Streaming Overlay**, enable **Updated artwork**, select the fields to show, and copy the generated URL into your OBS browser source. The checkbox is off by default. Existing URLs keep the original layout unless you add `artwork=2`.
+In **Settings → API Keys → Streaming Overlay**, set **Artwork** to **Version 2**, select the fields to show, and copy the generated URL into your OBS browser source. **Classic** is the default, and existing URLs keep the original layout unless you add `artwork=2`.
 
 ```
 /overlay/1?artwork=2&show=printer,model,filename,status,progress,layers,eta,nozzle,bed,chamber
@@ -784,11 +784,19 @@ Set the browser source dimensions in OBS to the composition you want:
 - **Portrait, 1080 × 1920:** printer identity and Bambuddy logo above a cropped camera view, with print information below.
 - **Landscape, 1920 × 1080:** a full-screen camera behind printer identity and a translucent information panel along the bottom.
 
-Screenshots below show the implemented layouts with simulated print data and a camera test pattern, not a live printer feed.
+Screenshots below show the layouts with simulated print data and a camera test pattern, not a live printer feed.
 
-![Updated landscape overlay](../images/stream-overlay/updated-landscape.png)
+![Classic landscape overlay](../images/stream-overlay/original-landscape.png)
 
-![Updated portrait overlay](../images/stream-overlay/updated-portrait.png){ width="360" }
+*Classic, for comparison*
+
+![Version 2 landscape overlay](../images/stream-overlay/updated-landscape.png)
+
+*Version 2, landscape*
+
+![Version 2 portrait overlay](../images/stream-overlay/updated-portrait.png){ width="360" }
+
+*Version 2, portrait*
 
 The layout follows the browser source viewport, including the builder preview. OBS scaling an existing landscape source into a portrait scene does not change its viewport; change the source's width and height instead.
 
@@ -796,7 +804,7 @@ The camera keeps its aspect ratio and fills the available area by cropping. Port
 
 All field toggles remain independent. Hidden or unavailable readings leave no empty boxes. Printer name and model appear in the header. The **Text size** setting adjusts the new layout too. `camera=false` hides the camera without starting a stream. A disconnected printer shows **Printer offline** when Status is enabled and hides stale progress and temperature readings. Finished and failed jobs show their status without an idle message.
 
-When login is enabled, use the same **Streaming Overlay** token as the original overlay. The updated artwork does not grant additional access.
+When login is enabled, use the same **Streaming Overlay** token as the Classic overlay. Version 2 does not grant additional access.
 
 #### Status-Only Mode (No Camera)
 
