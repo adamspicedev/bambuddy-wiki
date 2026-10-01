@@ -795,6 +795,18 @@ When login is enabled, uploading or removing the shared logo requires `settings:
 
 #### Version 2 artwork (portrait and landscape)
 
+Selecting **Version 2** also reveals a **Background transparency** slider. Increase it from 0% to 100% to fade the dark backgrounds while keeping text, logos and the camera fully visible. At 0%, the original backgrounds are preserved; at 100%, the backgrounds are transparent. Hide the camera if you want only the overlay information over another OBS source.
+
+The generated URL includes `backgroundTransparency=65`, for example, when the slider is above zero. Classic ignores this parameter. Missing or invalid values preserve the default; numbers outside 0–100 are clamped to that range. Switching back to Classic hides the slider and omits the parameter without losing the slider selection for Version 2.
+
+![Version 2 background transparency slider](../images/stream-overlay/branding-transparency-slider.png)
+
+At 100%, a background placed behind the overlay remains visible. The checkerboard below illustrates transparent pixels and is not part of the overlay.
+
+![Version 2 with fully transparent backgrounds](../images/stream-overlay/branding-transparent.png)
+
+
+
 In **Settings → API Keys → Streaming Overlay**, set **Artwork** to **Version 2**, select the fields to show, and copy the generated URL into your OBS browser source. **Classic** is the default, and existing URLs keep the original layout unless you add `artwork=2`.
 
 ```
