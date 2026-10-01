@@ -771,6 +771,28 @@ If another viewer already has the printer's camera open, the overlay joins that
 viewer's stream and runs at its frame rate - see
 [Shared Streams and FPS](#shared-streams-and-fps).
 
+#### Custom logo and progress colours
+
+In **Settings → API Keys → Streaming Overlay → Branding**, upload a PNG or WebP logo. Transparency is preserved. Images must be at most 2 MiB and 4 million pixels; animated images are not supported. Bambuddy stores a sanitized PNG on the server, resized to fit within 512 × 512 pixels.
+
+Enable **Custom logo** to include it in the generated overlay URL. Both Classic and Version 2 place it above the Bambuddy logo, preserving its proportions and limiting its size. The existing Bambuddy mark stays visible.
+
+There is one shared logo per Bambuddy installation. Replacing it changes what every logo-enabled overlay loads next time it opens or refreshes. **Remove** deletes the saved logo and clears the builder's selection. Refresh existing OBS browser sources after replacing or removing the logo. Without a saved logo, the original layout is used. Unchecking **Custom logo** only removes it from the generated URL.
+
+Use **From colour** and **To colour**, either their pickers or six-digit hex inputs, to colour the filled part of the progress bar, the Progress label, and the percentage from left to right. Set both to the same value for a solid colour. **Reset colours** restores the artwork's original colours, including its state-dependent styling. Invalid hex input does not replace the last valid selection.
+
+```text
+/overlay/1?logo=1&progressFrom=%23ff0088&progressTo=%230088ff
+```
+
+`logo=1` opts into the saved logo. `progressFrom` and `progressTo` must both be valid `#RRGGBB` colours; URL-encode the `#` as `%23` when writing URLs by hand. Existing URLs without these parameters retain their original appearance. Colours are stored in the URL, while the logo is stored on the server.
+
+When login is enabled, uploading or removing the shared logo requires `settings:update`. The settings preview requires `settings:read`. OBS accesses it with the same **Streaming Overlay** token used for the status feed; camera-only and Cam Wall tokens cannot read it.
+
+![Classic overlay with custom logo and gradient](../images/stream-overlay/branding-classic.png)
+
+![Version 2 with custom logo and gradient](../images/stream-overlay/branding-version2.png)
+
 #### Version 2 artwork (portrait and landscape)
 
 In **Settings → API Keys → Streaming Overlay**, set **Artwork** to **Version 2**, select the fields to show, and copy the generated URL into your OBS browser source. **Classic** is the default, and existing URLs keep the original layout unless you add `artwork=2`.
@@ -1034,7 +1056,7 @@ http://your-bambuddy/camwall?token=bblt_…&maxLive=9&interval=10
 
 - **Maximum lifetime is 365 days.** Bambuddy explicitly rejects "never expires" because a leaked permanent token would be irrevocable footgun-by-design.
 - **Tokens are stored as a hash.** A DB dump can't be replayed against the camera endpoint.
-- **Scoped, and scopes don't leak into each other.** A Camera stream token reaches only the stream and snapshot endpoints; a Cam Wall token additionally reaches the Cam Wall feed; a Streaming Overlay token additionally reaches one printer's overlay status. None can call any other Bambuddy API, and none exposes an IP address, serial number or access code.
+- **Scoped, and scopes don't leak into each other.** A Camera stream token reaches only the stream and snapshot endpoints; a Cam Wall token additionally reaches the Cam Wall feed; a Streaming Overlay token additionally reaches one printer's overlay status and the shared overlay logo. None can call any other Bambuddy API, and none exposes an IP address, serial number or access code.
 - **Revocable at any time.** Owners can revoke their own tokens; admins can revoke anyone's from the same panel.
 - **Last-used timestamp** is shown so you can identify dead config and clean up.
 
