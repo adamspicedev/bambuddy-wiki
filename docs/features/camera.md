@@ -729,12 +729,42 @@ The overlay displays:
 
 !!! tip "Build the URL in the UI"
     **Settings → API Keys → Streaming Overlay** has a builder: pick the printer,
-    tick the fields you want, set size, artwork and frame rate, paste in a token
+    tick the fields you want, set layout, size, artwork and frame rate, paste in a token
     if you need one, and copy the finished URL. It also has a preview so you can see
     the result before pasting it into OBS. The parameters below are what it
     produces, documented for anyone assembling a URL by hand or scripting one.
 
 Customize the overlay using query parameters:
+
+#### Landscape, portrait, or both
+
+Choose **Layout** independently of **Artwork**. Both Classic and Version 2 support all three choices:
+
+| Layout | URLs and previews | OBS browser-source dimensions |
+| --- | --- | --- |
+| Landscape, the default | One landscape URL and preview | 1920 × 1080 |
+| Portrait | One portrait URL and preview | 1080 × 1920 |
+| Both | Separate landscape and portrait URLs and simultaneous previews | One source at each size |
+
+Each URL has its own **Copy** and **Open** actions. In Both mode, add the two URLs as separate browser sources to your landscape and portrait scenes. They share the selected printer, fields, text size, camera visibility, frame rate and token. They can run at the same time.
+
+**Show preview** starts only the selected previews. **Hide preview** or leaving the settings page removes them and closes their streams. Changes to the settings update both the URLs and visible previews. Previews use the recommended source dimensions, scaled down to fit the settings card.
+
+The generated URLs explicitly select an orientation:
+
+```text
+/overlay/1?layout=landscape
+/overlay/1?layout=portrait
+/overlay/1?layout=portrait&artwork=2
+```
+
+These URLs keep their composition when opened in a differently sized browser window, with black bars where needed. Use the recommended dimensions in OBS to avoid those bars. `both` is a builder choice, not a URL parameter: each source has one orientation. URLs without `layout`, or with an unrecognised value, keep their previous viewport behaviour.
+
+Classic portrait uses larger, wrapping text and fits the camera without stretching it. Version 2 uses its portrait header, cropped camera and information panel. Both respect camera rotation. With an explicit layout, disconnected printers hide stale progress and temperatures, and finished prints do not also show an idle message.
+
+![Both layouts in the overlay builder](../images/stream-overlay/layouts-both.png)
+
+*Version 2 with both previews. The image uses simulated data and a camera test pattern, not a live printer.*
 
 #### Size
 
@@ -798,7 +828,7 @@ Screenshots below show the layouts with simulated print data and a camera test p
 
 *Version 2, portrait*
 
-The layout follows the browser source viewport, including the builder preview. OBS scaling an existing landscape source into a portrait scene does not change its viewport; change the source's width and height instead.
+Without a `layout` parameter, Version 2 follows the browser source viewport. The builder now emits an explicit orientation as described above.
 
 The camera keeps its aspect ratio and fills the available area by cropping. Portrait cropping can hide the sides of the build plate. Camera rotation and the frame-rate setting still apply.
 
