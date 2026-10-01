@@ -928,10 +928,11 @@ new connection starts a fresh 60-second renewal period. The overlay keeps its
 saved URL, token, FPS setting, rotation, and status display during renewal.
 Recovery is disabled in status-only mode (`camera=false`).
 
-This also renews healthy camera connections and may briefly interrupt the
-picture. It does not detect whether frames are fresh or guarantee recovery from
-an unavailable printer or a stalled shared camera connection on the server.
-Long-running recovery in Meld Studio has not yet been verified.
+Healthy connections are renewed too. A renewal joins the camera stream
+Bambuddy already has open for the printer and shows the latest frame at once,
+so a working picture doesn't flicker. Renewal can't bring back a printer that
+is offline or whose camera has stopped: the overlay picks the picture up again
+once the printer sends frames.
 
 If the camera remains frozen, check whether it works on Bambuddy's printers
 page, then try refreshing the browser source. When reporting the problem,
