@@ -781,6 +781,8 @@ There is one shared logo per Bambuddy installation. Replacing it changes what ev
 
 Use **From colour** and **To colour**, either their pickers or six-digit hex inputs, to colour the filled part of the progress bar, the Progress label, and the percentage from left to right. Set both to the same value for a solid colour. **Reset colours** restores the artwork's original colours, including its state-dependent styling. Invalid hex input does not replace the last valid selection.
 
+In Version 2, custom progress colours override the state-dependent colours of the progress bar, Progress label, and percentage. The selected gradient stays in use when the printer state changes. Use **Reset colours** to restore the state-dependent colours.
+
 ```text
 /overlay/1?logo=1&progressFrom=%23ff0088&progressTo=%230088ff
 ```
