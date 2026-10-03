@@ -563,6 +563,9 @@ Use Queue Only to:
 !!! tip "Batch Workflow"
     Add multiple prints with Manual Start, review the order, then release them one by one or all at once.
 
+!!! note "Jobs that wait for review"
+    For users without **Print Without Review**, every job waits like this, shown as **Waiting for review**, and only someone who can manage all queue jobs can start it. See [Jobs That Wait for Review](authentication.md#jobs-that-wait-for-review).
+
 ---
 
 ## :material-fire: Preheat & Heat Soak
@@ -1373,6 +1376,9 @@ A persistent toast notification shows real-time dispatch progress:
 
 !!! warning "If a printer takes the file but never starts"
     Bambuddy waits for the printer to actually begin printing after it accepts the file. If it never does, the job is put back in the queue and dispatched again — but only up to **three** times. After that the item is marked failed rather than re-uploading the same file indefinitely, because at that point the fault is on the printer: check its screen for a prompt or an error, and check that its SD card is inserted and readable.
+
+!!! info "If the file never reaches the printer"
+    When the printer's file service refuses the upload, does not answer, or drops the connection, the job stays in the queue instead of failing, and Bambuddy sends that printer no new jobs for five minutes. Jobs for any printer of that model go to the others. A job assigned to that printer shows *"&lt;printer&gt; is not accepting files — Bambuddy will retry automatically"* and is sent again when the wait is over. If the printer refuses again, the wait doubles each time, up to an hour, and the first upload that gets through resets it. You get one **Job Waiting** notification per outage, not one per retry, and **Keep bed warm between prints** does not heat a printer while it waits. A rejected access code, a full or missing SD card, or an upload too slow to finish still fails the job, because sending it again would fail the same way.
 
 ---
 
