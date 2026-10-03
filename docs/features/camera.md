@@ -725,7 +725,7 @@ The overlay displays:
 1. In OBS, click **+** under Sources
 2. Select **Browser**
 3. Enter the overlay URL (e.g., `http://192.168.1.100:8000/overlay/1`)
-4. Set width and height to match your scene (e.g., 1920x1080)
+4. Set width and height to match your scene (e.g., 1920x1080, or 1080x1920 for a portrait URL)
 5. Click **OK**
 
 !!! tip "Single Source"
@@ -764,13 +764,11 @@ Landscape URLs omit the layout parameter to preserve Classic text sizing at any 
 /overlay/1?layout=portrait&artwork=2
 ```
 
-Portrait URLs keep their 1080 × 1920 composition when opened in a differently sized browser window, scaled to fit with transparent space where needed. Use the recommended dimensions in OBS to fill the source. `both` is a builder choice, not a URL parameter. Landscape URLs keep their viewport behaviour, including Classic text sizing at 1280 × 720. Existing explicit `layout=landscape` URLs remain supported and use a fixed 1920 × 1080 canvas. Unrecognised layout values follow the viewport.
+Portrait URLs keep their 1080 × 1920 composition when opened in a differently sized browser window, scaled to fit with empty space where needed. OBS makes that space transparent; a normal browser tab shows the page background there. Use the recommended dimensions in OBS to fill the source. `both` is a builder choice, not a URL parameter. Landscape URLs keep their viewport behaviour, including Classic text sizing at 1280 × 720. Existing explicit `layout=landscape` URLs remain supported and use a fixed 1920 × 1080 canvas. Unrecognised layout values follow the viewport.
 
 Classic portrait uses larger, wrapping text and fits the camera without stretching it. Version 2 uses its portrait header, cropped camera and information panel. Both respect camera rotation. For all URLs, disconnected printers hide stale progress and temperatures, and finished prints do not also show an idle message. The Status toggle controls status text, including the offline message.
 
-| Previous builder | Both layouts |
-| --- | --- |
-| ![Previous overlay builder](../images/stream-overlay/layouts-before.png) | ![Both layouts in the overlay builder](../images/stream-overlay/layouts-after.png) |
+![Both layouts in the overlay builder](../images/stream-overlay/layouts-after.png)
 
 *Version 2 with both previews. The image uses simulated data and a camera test pattern, not a live printer.*
 
@@ -910,7 +908,7 @@ Available elements:
 | `layers` | Layer count (current/total) |
 | `eta` | Time remaining and ETA |
 | `filename` | Print file name |
-| `status` | Status text (Printing, Paused, etc.) |
+| `status` | Status text (Printing, Paused, etc.), including the offline message |
 | `printer` | Printer name |
 | `model` | Printer model (off by default; omitted if unknown) |
 | `nozzle` | Nozzle temperature (both nozzles on a dual-nozzle printer) |
@@ -969,8 +967,10 @@ They are **not** in the default set, so an overlay URL you are already using loo
 When no print is running, the overlay shows:
 
 - Camera feed (still active)
-- "Printer is idle" or "Printer offline" message
+- The status line, such as "Idle", "Finished" or "Printer offline", when `status` is in `show=`
 - Bambuddy logo
+
+Progress, layers, time remaining and temperatures are hidden while the printer is offline. Without `status` in `show=`, an idle or offline printer shows no status text.
 
 ### Troubleshooting
 
