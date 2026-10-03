@@ -694,10 +694,13 @@ after reloading or from another device while signed in as their owner. The token
 in the displayed URL is masked until you choose **Show token**; copying always
 copies the complete URL. Expired tokens cannot be selected.
 
+**Manual token** also accepts existing overlay tokens without saved-token retrieval. The input and generated URL are masked until you choose **Show token**; Copy still copies the complete usable URL. Manual credentials stay in memory and clear when you leave or reload the page.
+
 !!! note "Tokens created before saved-token support"
-    Older tokens appear as **Create a replacement** because only their hashes
-    were stored. They continue working in existing sources but cannot be
-    recovered. Create a replacement once, update and verify your sources, then
+    Older tokens appear as **Enter manually** because only their hashes
+    were stored. They still work in existing browser sources. If you have the
+    token, paste it into **Manual token** to keep using it. If every copy is lost,
+    create a replacement, update and verify your sources, then
     revoke the old token. Replacement and revocation are never automatic.
 
 The URL then looks like:
