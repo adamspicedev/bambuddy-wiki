@@ -8,6 +8,7 @@ When enabled, authentication provides:
 
 - **User Accounts**: Create multiple users with unique credentials
 - **Group-Based Permissions**: 80+ granular permissions organized by feature
+- **Printer Access per Group**: Limit a team to its own printers on a shared fleet
 - **Customizable Groups**: Create custom groups or use default system groups
 - **Secure Authentication**: JWT tokens with password hashing using PBKDF2
 - **User Activity Tracking**: See who uploaded archives, library files, queued prints, and started prints
@@ -31,7 +32,7 @@ Permissions follow a `resource:action` pattern. Categories include:
 
 - **Printers**: read, create, update, delete, control, files, ams_rfid, clear_plate
 - **Archives**: read, create, update_own, update_all, delete_own, delete_all, reprint_own, reprint_all
-- **Queue**: read, create, update_own, update_all, delete_own, delete_all, reorder
+- **Queue**: read, create, update_own, update_all, delete_own, delete_all, reorder, start_unreviewed
 - **Library**: read, upload, update_own, update_all, delete_own, delete_all
 - **Projects**: read, create, update, delete
 - **Inventory**: read, create, update, delete, view_assignments
@@ -79,6 +80,71 @@ Library **folders** never track an owner, so deleting a folder with contents req
 ### Users in Multiple Groups
 
 Users can belong to multiple groups. Permissions are **additive** - a user has all permissions from all their groups combined.
+
+### Jobs That Wait for Review
+
+Use this when staff should look at every job before it prints, for example in a school or FabLab where students submit their own jobs.
+
+Without **Print Without Review** (`queue:start_unreviewed`), a user can still queue jobs, but every job they queue waits with a **Waiting for review** badge until someone with `queue:update_all` starts it with :material-play: **Play**. The print dialog tells them so. Users with `queue:update_all` are the reviewers, so their own jobs never wait. They can't start their waiting jobs themselves, also not by switching off manual start in the editor, and they can't start jobs from a virtual printer that have no owner yet.
+
+To set it up, create a group for the students with `queue:create` and the "own" queue permissions, and leave **Print Without Review** off. Give the staff `queue:update_all`. Combined with "own" read permissions, students only see their own jobs and files.
+
+It applies to every way a job is queued: the print dialog, the file manager, more runs of a batch, pipelines, API keys and the webhook. A key queues like its owner, and a key whose owner needs review can't start waiting jobs through the webhook.
+
+Administrators and the Operators group have the permission. On upgrade, every group that could queue, start or run jobs was given it once, so nothing changes until you take it away from a group. Groups you create afterwards don't have it until you tick it.
+
+### Printer Access
+
+Permissions decide *what* a user may do. **Printer access** decides *on which printers*. Use it when several teams share one Bambuddy, or to keep a printer free for a training session.
+
+Printer access has its own page: **Settings → Authentication → Printer access** (admins only). Pick a group, switch on **Limit members to the printers and locations chosen here**, and choose what the group may use:
+
+- **Whole location**: every printer whose location matches, now and later. A printer added to "Lab A" reaches the Lab A team without anyone ticking it.
+- **Single printers**: tick them one by one, on top of any locations.
+
+Members of that group then see and control only those printers:
+
+- The printer list and dashboard, camera streams, the queue and batches, archives, projects, statistics, print log, pipeline runs, maintenance, smart plugs, spool assignments, scheduled drying, failure detection and firmware leave the other printers out.
+- Live updates for the other printers don't reach them.
+- Opening one of the other printers, or an archive or job from one, by its address answers as if it didn't exist.
+
+How it combines:
+
+| Situation | Printers the user sees |
+|-----------|------------------------|
+| In no group with printer access switched on | All printers (the default, so nothing changes until you limit a group) |
+| In one limited group | That group's printers |
+| In several limited groups | All of those groups' printers together |
+| In a limited group and in a group without the switch (e.g. Operators) | Only the limited group's printers. A group without the switch never widens access |
+| In a limited group with no printers or locations chosen | None |
+| Administrator | All printers, always |
+
+A typical setup keeps the permissions in one group (for example **Operators**) and the printers in a second group per team (**Team A**, **Team B**), and puts each user in both.
+
+Things that follow the same rule:
+
+- **API keys** reach only the printers of the user who created them, even if the key itself allows more. A key limited to some printers has to queue to a specific printer: "Any <model>" jobs and pipelines aimed at a printer class are refused for it. See [API Keys](api-keys.md).
+- **Camera stream links, Cam Wall and streaming-overlay tokens** show only the printers of whoever created them.
+- **Queued jobs**: a job for "Any <model>" only goes to a printer its owner may use. A job pinned to a printer that was later taken away from its owner waits, showing the reason, until access returns or you move it to another printer. Deleting a limited user while keeping their items stages their "Any <model>" jobs for a manual start, so you decide where they run.
+
+#### Working with many printers and groups
+
+- **By group** lists the groups on the left, with a search and a filter for limited and not limited groups. On the right, the selected group's printers are grouped by location. Each location shows how many of its printers the group reaches and has a **Whole location** box.
+- Search by name, model, serial or location, and filter by location, model, or whether the group has access. **Tick all shown** and **Untick all shown** act only on the printers the filters leave, so "all X1C in Lab B" is one search and one click.
+- **By printer** lists every printer with the limited groups that reach it. A group that reaches it through its location is marked with a pin and is changed under **By group**. A group that has it ticked can be removed there, and **Give access to…** adds one. The page also names the users who are in no limited group, because they see every printer whatever the groups say.
+- **Who has access** in a printer card's menu opens **By printer** on that printer.
+- Changes from either view are collected and saved together, or discarded, from the bar at the bottom.
+
+A location given to a group that no printer has any more (renamed or emptied) stays listed with the group so you can remove it.
+
+#### Moving printers between locations
+
+With locations given to groups, a printer's location is an access setting. The printer edit dialog names the groups a move affects, and only an admin can move a printer into or out of a location a limited group has. Locations are matched exactly, apart from leading and trailing spaces, which are removed when you save the printer.
+
+Printers you add are only reached by limited groups that have the printer's location. Otherwise, tick them for each group that should have them.
+
+!!! note
+    Printer access limits what Bambuddy shows and does. It cannot stop someone who has a printer's access code from sending a job to it directly from a slicer on the network.
 
 ## Enabling Authentication
 
@@ -171,7 +237,7 @@ Note: You cannot delete yourself or the last administrator. Ownerless items requ
 ### Editing Groups
 
 1. Click the edit icon next to a group — this opens the full-page group editor
-2. Modify name, description, or permissions
+2. Modify name, description or permissions. The editor shows a summary of the group's [printer access](#printer-access) with a link to change it
 3. Click **Save**
 
 Note: System groups (Administrators, Operators, Viewers) cannot be deleted.

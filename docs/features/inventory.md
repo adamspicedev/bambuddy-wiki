@@ -375,6 +375,9 @@ AMS slot configuration tells the **printer** what filament profile to use for a 
     - **Assign Spool**: Links an inventory spool to a slot for tracking (weight, usage history, cost) **and automatically configures the slot** with the spool's filament profile, color, and K-profile. Works on both configured and empty slots.
     - **Configure Slot**: Manually sends a specific filament profile to the printer. Useful when you want to override the auto-configured settings or set up a slot without an inventory spool.
 
+!!! note "A lost K-profile is put back"
+    A printer can drop a slot's K-profile selection, for example after a power cycle, and fall back to the default K. While the printer is idle, Bambuddy notices this on any slot with an assigned spool and re-selects the spool's stored K-profile for that printer and nozzle. The queue checks the same thing for a job's slots right before sending it. A *different* profile chosen in Bambu Studio is left alone, and so is **Default** chosen in Configure Slot. (A profile chosen in Configure Slot becomes the spool's stored profile, so that is the one put back.) If a profile won't stick after three tries (for example because it was deleted on the printer), the log says so and Bambuddy stops retrying until the slot changes.
+
 #### Where Configure Slot Presets Come From
 
 The preset list in the Configure Slot modal comes from the same three sources as the spool form, but filtered by printer model:
@@ -631,7 +634,7 @@ See inventory depletion rates based on material usage and handle stock logistics
 
 The Forecast view shows all Inventory spools. Identical spool types are grouped together. 
 
-Each rown can be expanded to show additional settings, data, and actions.
+Each row can be expanded to show additional settings, data, and actions.
 
 | Setting | Description |
 |---------|-------------|
@@ -643,8 +646,8 @@ Each rown can be expanded to show additional settings, data, and actions.
 
 The user can set a **Global Lead Time** that will override all lower lead times (or lead times that are not set).
 
-The interface will alert of any stock breakage forecasted. These can also be sent via the notification service by enabling them in **Settings → Notifications**.
-To exclude spools from forecasting and alert logging, click the Snooze icon in item row.
+The interface will alert of any stock breakage forecasted. These can also be sent via the notification service by enabling **Reorder Alert** and **Stock Break Alert** on a provider in **Settings → Notifications**; see [Inventory Events](notifications.md#inventory-events) for when they fire.
+To stop the alerts for a SKU, click the Snooze icon in its row.
 
 !!! tip "Set Lead Time on Your Spools"
     For the most accurate tracking, set Lead Time on each spool group.

@@ -22,7 +22,7 @@ Get notified about print events via WhatsApp, Telegram, Discord, Email, Home Ass
 | **Bark** | :material-star::material-star-outline::material-star-outline: Easy | iOS push, no account, self-hostable |
 | **Telegram** | :material-star::material-star::material-star-outline: Medium | Via Telegram Bot |
 | **Email** | :material-star::material-star::material-star-outline: Medium | SMTP email |
-| **Home Assistant** | :material-star::material-star-outline::material-star-outline: Easy | HA dashboard or mobile push via any notify service, with custom data fields |
+| **Home Assistant** | :material-star::material-star-outline::material-star-outline: Easy | HA dashboard or mobile push via any notify service, with custom data fields and automatic photo attachment |
 | **Webhook** | :material-star::material-star::material-star: Flexible | Custom HTTP POST |
 
 ---
@@ -155,6 +155,9 @@ Open-source push notifications for iPhone/iPad via the [Bark](https://github.com
 | **Group** | Optional — groups notifications in the iOS notification center |
 | **Sound** | Optional — a Bark sound name (e.g. `minuet`) |
 | **Interruption Level** | Optional — **Time Sensitive** breaks through scheduled summaries; **Critical** also bypasses Silent mode and Focus (great for print failures); **Passive** delivers without waking the screen |
+
+!!! tip "Photo attachment"
+    When a camera snapshot is available, it's sent as Bark's `icon` — the closest thing Bark's push schema has to a photo attachment, shown as a round icon on iOS. See [Finish Photos](#finish-photos) below for requirements.
 
 ---
 
@@ -341,6 +344,9 @@ Two things decide whether those buttons appear and do anything, and neither is s
 !!! warning "Write it as JSON, not YAML"
     The examples in the HA docs are YAML. This field is JSON: keys and string values need double quotes, lists use `[ ]`, and there are no trailing commas. Bambuddy refuses to save malformed JSON rather than sending a half-built payload, so if **Save** reports invalid JSON, the field content is the thing to check — nothing was dropped silently.
 
+!!! tip "Photo attachment"
+    When a camera snapshot is available, Bambuddy merges an `image` key into the service call's `data` object automatically — HA's `notify.mobile_app_*` services fetch that URL and attach it to the push notification. This **only happens when you've set a custom Home Assistant Service** above; the default persistent-notification dashboard has a strict schema that rejects fields it doesn't recognize, so nothing is attached there (you'd need `{finish_photo_url}` in the template body instead — see [Finish Photos](#finish-photos)). A `data.image` you set yourself in the Data field always wins over the auto-attached one. Also requires **External URL** to be set in **Settings** > **Network**, since HA fetches the image itself rather than the browser loading it.
+
 ---
 
 ### Webhook (Custom)
@@ -425,6 +431,8 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
 !!! info "Slack/Mattermost Format"
     When using the Slack payload format, only `{"text": "..."}` is sent — structured event fields are not included. Use the generic format for automation integrations that need structured data.
 
+    A camera snapshot is the one exception: when one is available, Bambuddy adds a legacy `attachments: [{"image_url": "..."}]` block so Slack/Mattermost can render it, since incoming webhooks can't take a byte upload — only a URL they fetch themselves. Requires **External URL** to be set in **Settings** > **Network**.
+
 ---
 
 ## :material-calendar-check: Event Triggers
@@ -434,7 +442,7 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
 | Event | Description |
 |-------|-------------|
 | **Print Started** | Print job begins |
-| **Plate Not Empty** | Objects detected on build plate before print (bypasses quiet hours) |
+| **Plate Not Empty** | Objects detected on build plate before print (bypasses quiet hours, includes a camera snapshot of the plate) |
 | **Print Completed** | Print finishes successfully (includes filament usage) |
 | **Print Failed** | Print fails or errors (includes scaled filament usage and progress) |
 | **Print Stopped** | Manual cancellation (includes scaled filament usage and progress) |
@@ -443,7 +451,7 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
 | **Missing Spool Assignment** | Print started with required AMS trays that have no assigned spool (off by default) |
 | **First Layer Complete** | First layer finished — check adhesion remotely (includes camera snapshot) |
 | **Bed Cooled** | Bed temperature dropped below threshold after print (configurable in Settings) |
-| **Progress Milestones** | At 25%, 50%, 75% |
+| **Progress Milestones** | At 25%, 50%, 75%, counted from the first printed layer. Some printers report a meaningless percentage while they heat and calibrate, so nothing fires before layer 1. A printer that reaches layer 1 already past a milestone sends that one milestone then. |
 
 ### Printer Events
 
@@ -451,7 +459,7 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
 |-------|-------------|
 | **Printer Offline** | Connection lost |
 | **Printer Error** | A new HMS fault, with the description Bambu publishes for it on your printer model. Faults Bambu publishes no text for, and notices that don't need you (such as "The top cover is open"), are not sent; see [HMS Error Monitoring](monitoring.md#error-details). |
-| **AI Failure Detection** | Obico ML detected a possible print failure (spaghetti, layer shift, etc.). Fires only when [Failure Detection](failure-detection.md) is enabled and the printer crosses the configured sensitivity threshold. Off by default. |
+| **AI Failure Detection** | Obico ML detected a possible print failure (spaghetti, layer shift, etc.), and includes the exact camera frame the ML model flagged. Fires only when [Failure Detection](failure-detection.md) is enabled and the printer crosses the configured sensitivity threshold. Off by default. |
 | **Printer Sensor Alert** | A [Home Assistant sensor](sensors.md#printer-sensors) bound to a printer entered its alert state — an enclosure door opened, a chamber ran hot. Fires on the transition in, not repeatedly. Off by default. Storage-location sensors have their own event, below. |
 | **Low Filament** | A spool assigned to an AMS slot or external holder dropped below its [low-stock threshold](inventory.md#additional-section): the same global percentage (default 20 %) and per-spool override that drive the inventory's Low Stock count, so the alert and the card agree. Remaining filament comes from the spool's weight, never the AMS remain percentage. Sent once per spool and slot; it can fire again after the spool goes back above the threshold. Slots with no assigned spool never alert. Off by default. |
 | **Maintenance Due** | Scheduled maintenance is due |
@@ -470,6 +478,8 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
 
 | Event | Description |
 |-------|-------------|
+| **Reorder Alert** | An inventory SKU has reached its reorder point in the [Forecast](inventory.md#forecasting) view. A SKU is one material, subtype, brand and colour, the same grouping the Forecast uses, with the same arithmetic. A SKU that is already in stock break has also reached its reorder point, so it counts here too. Checked every hour whether or not the Forecast page is open. Off by default. See [How the stock alerts fire](#how-the-stock-alerts-fire). |
+| **Stock Break Alert** | An inventory SKU is forecast to run out before a replenishment could arrive: its days of stock are no more than its effective lead time. Needs a lead time above zero, global or per SKU, since with none there is nothing to run out before. Off by default. See [How the stock alerts fire](#how-the-stock-alerts-fire). |
 | **Storage Location Sensor Alert** | A [Home Assistant sensor](sensors.md#storage-location-sensors) bound to a storage location entered its alert state — a drybox got too humid, a battery ran low. Fires on the transition in, not repeatedly. Off by default. This is a separate switch from **Printer Sensor Alert**: a provider narrowed to one printer would otherwise receive every drybox alert as well, with no way to have one without the other. |
 !!! info "Temperature alerts stay quiet while an AMS is drying"
 
@@ -478,6 +488,16 @@ When a camera snapshot is available (e.g. First Layer Complete, Print Started, P
     Bambuddy holds the temperature alert back for the length of a cycle and through the cool-down that follows, using the drying state the printer reports. It starts alerting again as soon as the unit reads back at or below your threshold, so the quiet period matches how long the unit actually takes to cool rather than a fixed delay. Nothing to configure, and the suppression survives a restart.
 
     Two deliberate exceptions. The **humidity** alert is unaffected — during drying that reading falling is the whole point. And a unit reporting a loss of thermal control still alerts, because that is exactly when you want to hear about it.
+
+#### How the stock alerts fire
+
+- **Every hour, in the background.** The scheduler runs the same forecast the Forecast view does, in both inventory modes (Bambuddy's own inventory and Spoolman). No spools are read unless an enabled provider has one of the two events on.
+- **On the way in.** An alert is sent when a SKU moves into the condition, and again after the condition has cleared (for example after a restock). A SKU that gets worse, from reorder to break, alerts again as a break. One that eases, from break back to reorder, is not announced again.
+- **A break is also a reorder.** A provider with only **Reorder Alert** on is told when a SKU breaks, as a reorder. A provider with **Stock Break Alert** on is told it as a break, and not a second time as a reorder.
+- **Snoozed SKUs are skipped.** Use the snooze icon on the SKU's row in the Forecast view. Un-snoozing a SKU that is still in the condition sends the alert again.
+- **Switching an event on tells you what is already low.** SKUs that were in the condition while it was off are reported the next time the check runs.
+- **A SKU with no measurable usage has no forecast**, so it never alerts. In Spoolman mode the daily rate is the SKU's consumption divided by the days since its oldest spool was registered, because Bambuddy holds no per-print usage history for Spoolman spools.
+- **Quiet hours and restarts.** An alert that falls in a provider's [quiet hours](#quiet-hours) is skipped, as for every event, and is not repeated when they end. What has been sent is stored, so a restart or an update does not repeat the alerts for SKUs that are still in the condition. A SKU that has no spools left is dropped from what is stored.
 
 ### Print Queue Events
 
@@ -641,6 +661,19 @@ Insert dynamic content with `{variable}`:
 - `{missing_slots}` - Comma-separated slot labels (e.g., "A1, A3")
 - `{missing_slot_details}` - Per-slot breakdown with expected profile (e.g., "- A1: PLA Basic")
 
+**Reorder Alert / Stock Break Alert:**
+
+- `{material}` - Material (e.g. "PLA")
+- `{subtype}` - Subtype (e.g. "Matte"); empty when the spool has none
+- `{brand}` - Brand; empty when the spool has none
+- `{color}` - Colour name; empty when the spool has none. Two colours of one product are separate SKUs, so this is what tells their messages apart
+- `{stock_g}` - Grams left across the SKU's spools
+- `{rate_g_day}` - Forecast daily use in grams
+- `{days_left}` - Days of stock left at that rate
+- `{lead_time_days}` - The effective lead time (Stock Break Alert only)
+
+The default message bodies include `{subtype}` and `{color}` (the titles still show only the material). An existing template is updated to match only if it is still the default; one you have edited keeps your wording.
+
 **AMS Events:**
 
 - `{printer}` - Printer name
@@ -671,20 +704,27 @@ Click reset to restore original template.
 
 ### Finish Photos
 
-A camera snapshot can reach your notification either as a **link** you click or as
-an **image attached to the message itself**. Which one you get depends on the
-channel, not on a setting — see the table below.
+A camera snapshot can reach your notification three ways: uploaded directly as a
+**real attachment**, attached after the receiving service **fetches it from a
+URL**, or as a plain **link** you click. Which one you get depends on the
+channel — see the tables below.
 
-Both paths are gated on **Settings** > **General** > **Archive Settings** >
+Taking snapshots is gated on **Settings** > **General** > **Archive Settings** >
 **Capture finish photo**. With that off, no snapshot is taken and nothing is
-attached or linked.
+attached or linked, for any channel. There is one exception: **AI Failure
+Detection** attaches the frame [Failure Detection](failure-detection.md) has
+already captured for its check, so that notification carries a photo either way.
 
-#### Attached image
+Each provider also has its own **Attach Photo** toggle in the Add/Edit
+Notification dialog (on by default) if you want a specific provider to get the
+text only, without the image. While it is on, **Test** sends a sample image
+along with the test message, so you can see how photos arrive on that channel.
 
-ntfy, Pushover, Telegram and Discord receive the photo as a real attachment
-whenever one was captured — you do **not** need `{finish_photo_url}` in the
-template for this, and no External URL is required, because the image bytes are
-uploaded with the message.
+#### Uploaded attachment
+
+ntfy, Pushover, Telegram, Discord and the generic Webhook format receive the
+photo bytes directly with the message — no External URL needed, and you don't
+need `{finish_photo_url}` in the template for this.
 
 | Channel | Snapshot delivery |
 |---------|-------------------|
@@ -692,28 +732,74 @@ uploaded with the message.
 | **Pushover** | Attached. |
 | **Telegram** | Attached — sent as a photo with the message as its caption. |
 | **Discord** | Attached and shown inline in the embed. |
-| **Webhook** | Base64-encoded JPEG in the payload's `image` field (generic format only — the Slack format carries text alone). |
-| **Email** | Inline, but only when the template references `{finish_photo_url}` — see below. |
-| **Home Assistant, CallMeBot, Bark** | Link only. Use `{finish_photo_url}` in the template. |
+| **Webhook (generic format)** | Base64-encoded JPEG in the payload's `image` field. |
 
-Attachments are capped at 2.5 MB. A larger snapshot is skipped and the message is
-sent as text — the reason is written to the log.
+#### Fetched-URL attachment
 
-Snapshots are not limited to completed prints: Print Started, Print Progress,
-First Layer Complete and printer-error notifications capture a live frame at the
-moment they fire.
+Home Assistant, Bark and Slack/Mattermost-format webhooks can't take a byte
+upload — they fetch the photo from a URL themselves and attach it on their end.
+This needs **External URL** set in **Settings** > **Network**, or there's
+nothing for them to fetch, and (same as above) doesn't need `{finish_photo_url}`
+in the template.
 
-#### Linked URL
+| Channel | Snapshot delivery |
+|---------|-------------------|
+| **Home Assistant** | Attached automatically via `data.image` — but only when you've set a custom **Home Assistant Service**. The default persistent-notification dashboard has a strict schema that rejects the extra field, so it falls back to link-only (see below) unless you set a service. |
+| **Bark** | Attached automatically as the notification `icon`. |
+| **Webhook (Slack format)** | Attached via a legacy `attachments[].image_url` block. |
 
-`{finish_photo_url}` is available on the **print_complete**, **print_failed** and
-**print_stopped** events, and needs a reachable server address:
+!!! note "How the photo link is protected"
+    These services fetch the photo without logging in to Bambuddy, so the link
+    itself is the key: each one points at a single saved snapshot under a long
+    random name, opens that one photo and nothing else (no camera stream, no
+    other photos), and stops working after **3 days**. Anyone who can see the
+    notification, for example everyone in a Slack channel, can open the photo
+    until then.
+
+#### Inline embed (Email)
+
+Email is template-driven rather than automatic: it inlines the photo only when
+your template's body literally contains `{finish_photo_url}` (#1792), so nobody
+who never asked for a photo gets a surprise attachment. The HTML part replaces
+the URL with the image at exactly that position; the plain-text part keeps the
+URL as a clickable link. Unlike the fetched-URL channels above, this works even
+without External URL set — the image bytes travel with the email itself — though
+the fallback link text will be a relative, unclickable path in that case.
+
+#### Link only
+
+CallMeBot has no attachment mechanism in its API at all — a `{finish_photo_url}`
+link in the text is the only way to get the photo there. Home Assistant also
+falls back to this when you're using the default persistent-notification
+service instead of a custom one.
+
+With [authentication](authentication.md) off, `{finish_photo_url}` is the
+archive's own photo link, which needs no login and keeps working. With
+authentication on, that page needs a login a tapped link can't carry, so the
+link points at a copy of the photo instead, protected the same way as the
+fetched-URL photos above: one photo, a long random name, and it stops working
+after **3 days**.
+
+Uploaded and fetched-URL attachments are capped at 2.5 MB. A larger snapshot is
+skipped and the message is sent as text — the reason is written to the log.
+
+Snapshots aren't limited to completed prints — Print Started, Print Progress,
+First Layer Complete, Plate Not Empty, AI Failure Detection and printer-error
+notifications all capture a live frame at the moment they fire, and get
+attached wherever the channel supports it. `{finish_photo_url}` itself is only
+exposed as an insertable template variable on **print_complete**,
+**print_failed** and **print_stopped** (and the per-user print emails, below)
+— the other events attach automatically to channels that support it, but have
+no variable for a manual link or Email's inline embed.
+
+#### Setting up the link / External URL
 
 1. Go to **Settings** > **Network**
 2. Set **External URL** to your Bambuddy server's address (e.g., `http://192.168.1.100:8000`)
-3. Edit your template to include `{finish_photo_url}`
+3. Edit your **print_complete** / **print_failed** / **print_stopped** template to include `{finish_photo_url}`
 
 !!! note "External URL Required"
-    The External URL setting is required for the linked form to work. This is auto-detected from your browser when you first visit the Network settings page.
+    External URL is required for the link to resolve to something clickable, and for Home Assistant/Bark/Slack's automatic attachment to have anything to fetch. It's auto-detected from your browser when you first visit the Network settings page.
 
 Example template:
 ```
@@ -725,8 +811,7 @@ Photo: {finish_photo_url}
 ```
 
 For **Email**, that same variable also switches the message to an inline embed —
-the photo is rendered at exactly the position you placed the variable. See the
-`{finish_photo_url}` entry under [Variables](#variables) for the details.
+see [Inline embed (Email)](#inline-embed-email) above.
 
 ---
 
@@ -808,5 +893,15 @@ When [Advanced Authentication](authentication.md#per-user-email-notifications) i
 2. Click **Notifications** in the sidebar
 3. Toggle each event type on or off
 4. Click **Save**
+
+### Photos
+
+**Print Completed**, **Print Failed** and **Print Stopped** emails support the
+same inline-photo opt-in as the provider-based Email path: add
+`{finish_photo_url}` to the template body (**Settings** → **Notifications** →
+**Templates**) and the photo is embedded at that position when one was
+captured — see [Inline embed (Email)](#inline-embed-email) above for how the
+opt-in works. **Print Started** has no photo support, since there's no
+finished-print snapshot yet at that point.
 
 See [Authentication → Per-User Email Notifications](authentication.md#per-user-email-notifications) for full details.
