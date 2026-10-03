@@ -690,7 +690,7 @@ For example: `http://192.168.1.100:8000/overlay/1`
 3. Choose the printer and appearance settings, then choose **Copy overlay URL**.
 4. Paste the complete URL into OBS and keep it somewhere safe.
 
-While token creation is running, Cancel, manual entry and import are disabled so the one-time token response remains available. If creation fails, the server error is shown and those controls become available again.
+While token creation is running, Cancel, manual entry and import are disabled so the one-time token response remains available. If creation fails, the server error is shown and those controls become available again. Import is also unavailable while a logo upload or removal is running.
 
 Tokens are stored as hashes and cannot be retrieved later. The builder holds the
 credential only in memory and clears it when you leave or reload. **Manual token**
