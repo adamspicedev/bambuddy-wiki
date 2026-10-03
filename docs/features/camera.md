@@ -690,6 +690,8 @@ For example: `http://192.168.1.100:8000/overlay/1`
 3. Choose the printer and appearance settings, then choose **Copy overlay URL**.
 4. Paste the complete URL into OBS and keep it somewhere safe.
 
+While token creation is running, Cancel, manual entry and import are disabled so the one-time token response remains available. If creation fails, the server error is shown and those controls become available again.
+
 Tokens are stored as hashes and cannot be retrieved later. The builder holds the
 credential only in memory and clears it when you leave or reload. **Manual token**
 and the generated URL are masked until you choose **Show token**; copying always
@@ -698,7 +700,7 @@ copies the complete usable URL.
 To edit an existing browser source, paste its complete URL into **Existing overlay URL** and choose **Import URL**, or paste its token into **Manual token**. Import reads the URL
 locally; it does not contact the supplied server. The generated URL uses this
 Bambuddy installation, so check the selected printer when importing from another
-installation. Copy the updated URL back into OBS after changing settings. Import supports printer, token, fields, text size, FPS, artwork and camera visibility. Unsupported or invalid options are rejected without changing the current settings; use manual token entry for URLs with other options.
+installation. Copy the updated URL back into OBS after changing settings. Import preserves supported printer, token, fields, text size, FPS, artwork, camera and branding settings. Like the overlay renderer, it clamps FPS to 1–30 and ignores unknown fields and parameters. Invalid URLs, duplicate token parameters, embedded username/password credentials and wrong paths are rejected without changing the current settings.
 
 !!! note "Existing tokens keep working"
     No tokens are automatically replaced or revoked. Reuse an existing token or
@@ -753,8 +755,8 @@ The overlay displays:
 
 !!! tip "Build the URL in the UI"
     **Settings → API Keys → Streaming Overlay** has a builder: pick the printer,
-    tick the fields you want, set size, artwork and frame rate, paste in a token
-    if you need one, and copy the finished URL. It also has a preview so you can see
+    tick the fields you want, set size, artwork, frame rate and branding, paste in
+    a token if you need one, and copy the finished URL. It also has a preview so you can see
     the result before pasting it into OBS. The parameters below are what it
     produces, documented for anyone assembling a URL by hand or scripting one.
 
@@ -829,6 +831,40 @@ The camera keeps its aspect ratio and fills the available area by cropping. Port
 All field toggles remain independent. Hidden or unavailable readings leave no empty boxes. Printer name and model appear in the header. The **Text size** setting adjusts the new layout too. `camera=false` hides the camera without starting a stream. A disconnected printer shows **Printer offline** when Status is enabled and hides stale progress and temperature readings. Finished and failed jobs show their status without an idle message.
 
 When login is enabled, use the same **Streaming Overlay** token as the Classic overlay. Version 2 does not grant additional access.
+
+Selecting **Version 2** also reveals a **Background transparency** slider. Increase it from 0% to 100% to fade the dark backgrounds while keeping text, logos and the camera fully visible. At 0%, the original backgrounds are preserved; at 100%, the backgrounds are transparent. Hide the camera if you want only the overlay information over another OBS source.
+
+The generated URL includes `backgroundTransparency=65`, for example, when the slider is above zero. Classic ignores this parameter. Missing or invalid values preserve the default; numbers outside 0–100 are clamped to that range. Switching back to Classic hides the slider and omits the parameter without losing the slider selection for Version 2.
+
+![Version 2 background transparency slider](../images/stream-overlay/branding-transparency-slider.png)
+
+At 100%, a background placed behind the overlay remains visible. The checkerboard below illustrates transparent pixels and is not part of the overlay.
+
+![Version 2 with fully transparent backgrounds](../images/stream-overlay/branding-transparent.png)
+
+#### Custom logo and progress colours
+
+In **Settings → API Keys → Streaming Overlay → Branding**, upload a PNG or WebP logo. Transparency is preserved. Images must be at most 2 MiB and 4 million pixels; animated images are not supported. Bambuddy stores a sanitized PNG on the server, resized to fit within 512 × 512 pixels.
+
+Enable **Custom logo** to include it in the generated overlay URL. Both Classic and Version 2 place it above the Bambuddy logo, preserving its proportions and limiting its size. The existing Bambuddy mark stays visible.
+
+There is one shared logo per Bambuddy installation. Replacing it changes what every logo-enabled overlay loads next time it opens or refreshes. **Remove** deletes the saved logo and clears the builder's selection. Refresh existing OBS browser sources after replacing or removing the logo. Without a saved logo, the original layout is used. Unchecking **Custom logo** only removes it from the generated URL.
+
+Use **From colour** and **To colour**, either their pickers or six-digit hex inputs, to colour the filled part of the progress bar, the Progress label, and the percentage from left to right. Set both to the same value for a solid colour. **Reset colours** restores the artwork's original colours, including its state-dependent styling. Invalid hex input does not replace the last valid selection.
+
+In Version 2, custom progress colours override the state-dependent colours of the progress bar, Progress label, and percentage. The selected gradient stays in use when the printer state changes. Use **Reset colours** to restore the state-dependent colours.
+
+```text
+/overlay/1?logo=1&progressFrom=%23ff0088&progressTo=%230088ff
+```
+
+`logo=1` opts into the saved logo. `progressFrom` and `progressTo` must both be valid `#RRGGBB` colours; URL-encode the `#` as `%23` when writing URLs by hand. Existing URLs without these parameters retain their original appearance. Colours are stored in the URL, while the logo is stored on the server.
+
+When login is enabled, uploading or removing the shared logo requires `settings:update`. The settings preview requires `settings:read`. OBS accesses it with the same **Streaming Overlay** token used for the status feed; camera-only and Cam Wall tokens cannot read it.
+
+![Classic overlay with custom logo and gradient](../images/stream-overlay/branding-classic.png)
+
+![Version 2 with custom logo and gradient](../images/stream-overlay/branding-version2.png)
 
 #### Status-Only Mode (No Camera)
 
@@ -1079,7 +1115,7 @@ http://your-bambuddy/camwall?token=bblt_…&maxLive=9&interval=10
 - **Hash-only storage for every scope.** Tokens cannot be recovered from their hashes. Lists expose metadata, never credentials; there is no token-recovery endpoint.
 - **No additional encryption-key requirement.** Overlay tokens do not introduce a new key or change backup-key policy. Protect any saved browser-source URLs as credentials.
 - **Browser memory only.** The builder does not save entered, imported or newly created credentials in browser storage. Leaving or reloading clears them.
-- **Scoped, and scopes don't leak into each other.** A Camera stream token reaches only the stream and snapshot endpoints; a Cam Wall token additionally reaches the Cam Wall feed; a Streaming Overlay token additionally reaches one printer's overlay status. None can call any other Bambuddy API, and none exposes an IP address, serial number or access code.
+- **Scoped, and scopes don't leak into each other.** A Camera stream token reaches only the stream and snapshot endpoints; a Cam Wall token additionally reaches the Cam Wall feed; a Streaming Overlay token additionally reaches one printer's overlay status and the shared overlay logo. None can call any other Bambuddy API, and none exposes an IP address, serial number or access code.
 - **Revocable at any time.** Owners can revoke their own tokens; admins can revoke anyone's from the same panel.
 - **Last-used timestamp** is shown so you can identify dead config and clean up.
 
