@@ -750,19 +750,21 @@ Each URL has its own **Copy** and **Open** actions. In Both mode, add the two UR
 
 **Show preview** starts only the selected previews. **Hide preview** or leaving the settings page removes them and closes their streams. Changes to the settings update both the URLs and visible previews. Previews use the recommended source dimensions, scaled down to fit the settings card.
 
-The generated URLs explicitly select an orientation:
+Landscape URLs omit the layout parameter to preserve Classic text sizing at any source resolution. Portrait URLs select a fixed composition:
 
 ```text
-/overlay/1?layout=landscape
+/overlay/1
 /overlay/1?layout=portrait
 /overlay/1?layout=portrait&artwork=2
 ```
 
-These URLs keep their composition when opened in a differently sized browser window, with black bars where needed. Use the recommended dimensions in OBS to avoid those bars. `both` is a builder choice, not a URL parameter: each source has one orientation. URLs without `layout`, or with an unrecognised value, keep their previous viewport behaviour.
+Portrait URLs keep their 1080 × 1920 composition when opened in a differently sized browser window, scaled to fit with transparent space where needed. Use the recommended dimensions in OBS to fill the source. `both` is a builder choice, not a URL parameter. Landscape URLs keep their viewport behaviour, including Classic text sizing at 1280 × 720. Existing explicit `layout=landscape` URLs remain supported and use a fixed 1920 × 1080 canvas. Unrecognised layout values follow the viewport.
 
-Classic portrait uses larger, wrapping text and fits the camera without stretching it. Version 2 uses its portrait header, cropped camera and information panel. Both respect camera rotation. With an explicit layout, disconnected printers hide stale progress and temperatures, and finished prints do not also show an idle message.
+Classic portrait uses larger, wrapping text and fits the camera without stretching it. Version 2 uses its portrait header, cropped camera and information panel. Both respect camera rotation. For all URLs, disconnected printers hide stale progress and temperatures, and finished prints do not also show an idle message. The Status toggle controls status text, including the offline message.
 
-![Both layouts in the overlay builder](../images/stream-overlay/layouts-both.png)
+| Previous builder | Both layouts |
+| --- | --- |
+| ![Previous overlay builder](../images/stream-overlay/layouts-before.png) | ![Both layouts in the overlay builder](../images/stream-overlay/layouts-after.png) |
 
 *Version 2 with both previews. The image uses simulated data and a camera test pattern, not a live printer.*
 
@@ -828,7 +830,7 @@ Screenshots below show the layouts with simulated print data and a camera test p
 
 *Version 2, portrait*
 
-Without a `layout` parameter, Version 2 follows the browser source viewport. The builder now emits an explicit orientation as described above.
+Without a `layout` parameter, Version 2 follows the browser source viewport. The builder omits this parameter for Landscape and adds `layout=portrait` for Portrait, as described above.
 
 The camera keeps its aspect ratio and fills the available area by cropping. Portrait cropping can hide the sides of the build plate. Camera rotation and the frame-rate setting still apply.
 
